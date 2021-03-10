@@ -205,6 +205,7 @@ bool SpinBLEClient::connectToServer()
                 pRemoteCharacteristic->subscribe(true, nullptr, true);
                 debugDirector("Found " + String(pRemoteCharacteristic->getUUID().toString().c_str()) + " on reconnect.");
                 reconnectTries = MAX_RECONNECT_TRIES;
+                //VV Is this really needed? Shouldn't it just carry over from the previous connection? VV
                 spinBLEClient.myBLEDevices[device_number].set(myDevice, pClient->getConnId(), serviceUUID, charUUID);
                 spinBLEClient.myBLEDevices[device_number].doConnect = false;
 
@@ -313,6 +314,7 @@ bool SpinBLEClient::connectToServer()
 void SpinBLEClient::MyClientCallback::onConnect(BLEClient *pclient)
 {
 
+    debugDirector("Connect Called");
     auto addr = pclient->getPeerAddress();
     for (size_t i = 0; i < NUM_BLE_DEVICES; i++)
     {
@@ -338,7 +340,8 @@ void SpinBLEClient::MyClientCallback::onConnect(BLEClient *pclient)
 
 void SpinBLEClient::MyClientCallback::onDisconnect(BLEClient *pclient)
 {
-
+    
+    debugDirector("Disconnect Called");
     if (spinBLEClient.intentionalDisconnect)
     {
         debugDirector("Intentional Disconnect");
@@ -360,11 +363,14 @@ void SpinBLEClient::MyClientCallback::onDisconnect(BLEClient *pclient)
                 spinBLEClient.myBLEDevices[i].doConnect = true;
                 if ((spinBLEClient.myBLEDevices[i].charUUID == CYCLINGPOWERMEASUREMENT_UUID) || (spinBLEClient.myBLEDevices[i].charUUID == FITNESSMACHINEINDOORBIKEDATA_UUID) || (spinBLEClient.myBLEDevices[i].charUUID == FLYWHEEL_UART_RX_UUID))
                 {
+
+                    debugDirector("Deregistered PM on Disconnect");
                     spinBLEClient.connectedPM = false;
                     break;
                 }
                 if ((spinBLEClient.myBLEDevices[i].charUUID == HEARTCHARACTERISTIC_UUID))
                 {
+                    debugDirector("Deregistered HR on Disconnect");
                     spinBLEClient.connectedHR = false;
                     break;
                 }
