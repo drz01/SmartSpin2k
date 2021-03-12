@@ -513,6 +513,7 @@ void SpinBLEClient::scanProcess()
     serializeJson(devices, output);
     debugDirector("Bluetooth Client Found Devices: " + output, true, true);
     userConfig.setFoundDevices(output);
+    pBLEScan=nullptr; //free up memory
 }
 
 //This is the main server scan request process to use.
@@ -541,8 +542,8 @@ void SpinBLEClient::disconnect()
 void SpinBLEClient::removeDuplicates(BLEClient *pClient)
 {
     //BLEAddress thisAddress = pClient->getPeerAddress();
-    myAdvertisedBLEDevice tBLEd;
-    myAdvertisedBLEDevice oldBLEd;
+    SpinBLEAdvertisedDevice tBLEd;
+    SpinBLEAdvertisedDevice oldBLEd;
     for (size_t i = 0; i < NUM_BLE_DEVICES; i++) //Disconnect oldest PM to avoid two connected.
     {
         tBLEd = spinBLEClient.myBLEDevices[i];
@@ -574,3 +575,20 @@ void SpinBLEClient::removeDuplicates(BLEClient *pClient)
         }
     }
 }
+
+void SpinBLEAdvertisedDevice::print()
+    {
+        char logBuf[250];
+        char *logBufP = logBuf;
+        logBufP += sprintf(logBufP, "Address: (%s)", peerAddress.toString().c_str());
+        logBufP += sprintf(logBufP, " Client ID: (%d)", connectedClientID);
+        logBufP += sprintf(logBufP," SerUUID: (%s)", serviceUUID.toString().c_str());
+        logBufP += sprintf(logBufP," CharUUID: (%s)", charUUID.toString().c_str());
+        logBufP += sprintf(logBufP," HRM: (%s)", userSelectedHR ? "true" : "false");
+        logBufP += sprintf(logBufP," PM: (%s)", userSelectedPM ? "true" : "false");
+        logBufP += sprintf(logBufP," CSC: (%s)", userSelectedCSC ? "true" : "false");
+        logBufP += sprintf(logBufP," CT: (%s)", userSelectedCT ? "true" : "false");
+        logBufP += sprintf(logBufP," doConnect: (%s)", doConnect ? "true" : "false");
+        strcat(logBufP, "|");
+        debugDirector(String(logBuf));
+    }
