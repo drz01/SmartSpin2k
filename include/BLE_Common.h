@@ -55,9 +55,7 @@ void BLECommunications(void *pvParameters);
 
 //*****************************Server****************************/
 extern int bleConnDesc; //These all need re
-extern bool _BLEClientConnected;
 extern bool updateConnParametersFlag;
-extern bool GlobalBLEClientConnected;
 
 void startBLEServer();
 void computeERG(int, int);
@@ -66,6 +64,7 @@ void updateIndoorBikeDataChar();
 void updateCyclingPowerMesurementChar();
 void calculateInstPwrFromHR();
 void updateHeartRateMeasurementChar();
+int connectedClientCount();
 
 class MyServerCallbacks : public BLEServerCallbacks
 {
@@ -87,7 +86,6 @@ void bleClientTask(void *pvParameters);
 //UUID's the client has methods for
 //BLEUUID serviceUUIDs[4] = {FITNESSMACHINESERVICE_UUID, CYCLINGPOWERSERVICE_UUID, HEARTSERVICE_UUID, FLYWHEEL_UART_SERVICE_UUID};
 //BLEUUID charUUIDs[4] = {FITNESSMACHINEINDOORBIKEDATA_UUID, CYCLINGPOWERMEASUREMENT_UUID, HEARTCHARACTERISTIC_UUID, FLYWHEEL_UART_TX_UUID};
-
 
 enum userSelect : uint8_t
 {

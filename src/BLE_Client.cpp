@@ -33,7 +33,7 @@ void SpinBLEClient::start()
         NULL,            /* parameter of the task */
         1,               /* priority of the task  */
         &BLEClientTask,  /* Task handle to keep track of created task */
-        1);
+        0);
 }
 
 // BLE Client loop task
@@ -237,7 +237,7 @@ bool SpinBLEClient::connectToServer()
     debugDirector(" - Created client", false);
     pClient->setClientCallbacks(new MyClientCallback(), true);
     // Connect to the remove BLE Server.
-    pClient->setConnectionParams(80, 80, 0, 200);
+    pClient->setConnectionParams(60, 200, 0, 1000);
     /** Set how long we are willing to wait for the connection to complete (seconds), default is 30. */
     pClient->setConnectTimeout(5);
     pClient->connect(myDevice->getAddress()); // if you pass BLEAdvertisedDevice instead of address, it will be recognized type of peer device address (public or private)
@@ -473,9 +473,6 @@ void SpinBLEClient::scanProcess()
     spinBLEClient.doScan = false; //Confirming we did the scan
     debugDirector("Scanning for BLE servers and putting them into a list...");
 
-    // Retrieve a Scanner and set the callback we want to use to be informed when we
-    // have detected a new device.  Specify that we want active scanning and start the
-    // scan to run for 5 seconds.
     BLEScan *pBLEScan = BLEDevice::getScan();
     pBLEScan->setAdvertisedDeviceCallbacks(new MyAdvertisedDeviceCallback());
     pBLEScan->setInterval(550);
@@ -526,6 +523,7 @@ void SpinBLEClient::serverScan(bool connectRequest)
     spinBLEClient.doScan = true;
 }
 
+//Shuts down all BLE processes. 
 void SpinBLEClient::disconnect()
 {
     scanRetries = 0;
