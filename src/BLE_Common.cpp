@@ -28,18 +28,18 @@ void BLECommunications(void *pvParameters)
                 //spinBLEClient.myBLEDevices[x].print();
                 if (spinBLEClient.myBLEDevices[x].advertisedDevice) //is device registered?
                 {
-                   // debugDirector("1",false);
+                    //debugDirector("1",false);
                     SpinBLEAdvertisedDevice myAdvertisedDevice = spinBLEClient.myBLEDevices[x];
                     if ((myAdvertisedDevice.connectedClientID != BLE_HS_CONN_HANDLE_NONE) && (myAdvertisedDevice.doConnect == false)) //client must not be in connection process
                     {
-                     //   debugDirector("2",false);
-                        if (NimBLEDevice::getClientByPeerAddress(myAdvertisedDevice.peerAddress)) //nullptr check
+                        //debugDirector("2",false);
+                        if (BLEDevice::getClientByPeerAddress(myAdvertisedDevice.peerAddress)) //nullptr check
                         {
-                       //     debugDirector("3",false);
+                            //debugDirector("3",false);
                             BLEClient *pClient = NimBLEDevice::getClientByPeerAddress(myAdvertisedDevice.peerAddress);
                             if ((myAdvertisedDevice.serviceUUID != BLEUUID((uint16_t)0x0000)) && (pClient->isConnected())) //Client connected with a valid UUID registered
                             {
-                         //       debugDirector("4");
+                                //debugDirector("4");
                                 //Write the recieved data to the Debug Director
 
                                 BLERemoteCharacteristic *pRemoteBLECharacteristic = pClient->getService(myAdvertisedDevice.serviceUUID)->getCharacteristic(myAdvertisedDevice.charUUID);
@@ -56,7 +56,7 @@ void BLECommunications(void *pvParameters)
                                 {
                                     logBufP += sprintf(logBufP, "%02x ", pData[i]);
                                 }
-                                logBufP += sprintf(logBufP, "<- %s | %s", myAdvertisedDevice.serviceUUID.toString().c_str(), myAdvertisedDevice.charUUID.toString().c_str());
+                                logBufP += sprintf(logBufP, "<- %s | %s", myAdvertisedDevice.serviceUUID.toString().substr(0,8).c_str(), myAdvertisedDevice.charUUID.toString().substr(0,8).c_str());
 
                                 std::shared_ptr<SensorData> sensorData = sensorDataFactory.getSensorData(pRemoteBLECharacteristic, pData, length);
 
@@ -78,7 +78,14 @@ void BLECommunications(void *pvParameters)
                                 if (sensorData->hasPower())
                                 {
                                     int power = sensorData->getPower();
-                                    userConfig.setSimulatedWatts(power);
+                                    if (userConfig.getDoublePower())
+                                    {
+                                        userConfig.setSimulatedWatts(power*2);
+                                    }
+                                    else
+                                    {
+                                        userConfig.setSimulatedWatts(power);
+                                    }
                                     spinBLEClient.connectedPM |= true;
                                     logBufP += sprintf(logBufP, " PW(%d)", power % 10000);
                                 }
@@ -91,6 +98,16 @@ void BLECommunications(void *pvParameters)
                                 strcat(logBufP, " ]");
                                 debugDirector(String(logBuf), true, true);
                             }
+                            else if (!pClient->isConnected()) //This shouldn't ever be called really..........
+                            {
+                                if (pClient->disconnect() == 0) //0 is a suscessful disconnect :?
+                                {
+                                    BLEDevice::deleteClient(pClient);
+                                    vTaskDelay(100 / portTICK_PERIOD_MS);
+                                    debugDirector("Workaround connect");
+                                    myAdvertisedDevice.doConnect = true;
+                                }
+                            }
                         }
                     }
                 }
@@ -102,6 +119,10 @@ void BLECommunications(void *pvParameters)
         {
             calculateInstPwrFromHR();
         }
+#ifdef DEBUG_HR_TO_PWR
+        calculateInstPwrFromHR();
+#endif
+
         if (!spinBLEClient.connectedPM && !userPWC.hr2Pwr)
         {
             userConfig.setSimulatedCad(0);
@@ -112,7 +133,7 @@ void BLECommunications(void *pvParameters)
             userConfig.setSimulatedHr(0);
         }
 
-        if (connectedClientCount()>0)
+        if (connectedClientCount() > 0)
         {
             //update the BLE information on the server
             computeCSC();
@@ -130,15 +151,14 @@ void BLECommunications(void *pvParameters)
         }
         else
         {
-            
         }
-        if (connectedClientCount()==0)
+        if (connectedClientCount() == 0)
         {
             digitalWrite(LED_PIN, LOW); //blink if no client connected
         }
-        if(BLEDevice::getAdvertising())
+        if (BLEDevice::getAdvertising())
         {
-            if(!(BLEDevice::getAdvertising()->isAdvertising())&& (BLEDevice::getServer()->getConnectedCount()<CONFIG_BT_NIMBLE_MAX_CONNECTIONS-NUM_BLE_DEVICES))
+            if (!(BLEDevice::getAdvertising()->isAdvertising()) && (BLEDevice::getServer()->getConnectedCount() < CONFIG_BT_NIMBLE_MAX_CONNECTIONS - NUM_BLE_DEVICES))
             {
                 debugDirector("Starting Advertising From Communication Loop");
                 BLEDevice::startAdvertising();
@@ -153,4 +173,3 @@ void BLECommunications(void *pvParameters)
 #endif
     }
 }
-

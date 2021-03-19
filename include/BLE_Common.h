@@ -37,9 +37,16 @@
 #define FITNESSMACHINEPOWERRANGE_UUID BLEUUID((uint16_t)0x2AD8)
 
 // GATT service/characteristic UUIDs for Flywheel Bike from ptx2/gymnasticon/
-#define FLYWHEEL_UART_SERVICE_UUID BLEUUID((uint16_t)0xCA9E)
-#define FLYWHEEL_UART_RX_UUID BLEUUID((uint16_t)0xCA9E)
-#define FLYWHEEL_UART_TX_UUID BLEUUID((uint16_t)0xCA9E)
+#define FLYWHEEL_UART_SERVICE_UUID BLEUUID("6e400001b5a3f393e0a9e50e24dcca9e")
+#define FLYWHEEL_UART_RX_UUID BLEUUID("6e400002b5a3f393e0a9e50e24dcca9e")
+#define FLYWHEEL_UART_TX_UUID BLEUUID("6e400003b5a3f393e0a9e50e24dcca9e")
+
+// The Echelon Services
+#define ECHELON_DEVICE_UUID BLEUUID("0bf669f0-45f2-11e7-9598-0800200c9a66")
+#define ECHELON_SERVICE_UUID BLEUUID("0bf669f1-45f2-11e7-9598-0800200c9a66")
+#define ECHELON_WRITE_UUID BLEUUID("0bf669f2-45f2-11e7-9598-0800200c9a66")
+#define ECHELON_DATA_UUID BLEUUID("0bf669f4-45f2-11e7-9598-0800200c9a66")
+
 
 // macros to convert different types of bytes into int The naming here sucks and should be fixed.
 #define bytes_to_s16(MSB, LSB) (((signed int)((signed char)MSB))) << 8 | (((signed char)LSB))
@@ -87,19 +94,10 @@ void bleClientTask(void *pvParameters);
 //BLEUUID serviceUUIDs[4] = {FITNESSMACHINESERVICE_UUID, CYCLINGPOWERSERVICE_UUID, HEARTSERVICE_UUID, FLYWHEEL_UART_SERVICE_UUID};
 //BLEUUID charUUIDs[4] = {FITNESSMACHINEINDOORBIKEDATA_UUID, CYCLINGPOWERMEASUREMENT_UUID, HEARTCHARACTERISTIC_UUID, FLYWHEEL_UART_TX_UUID};
 
-enum userSelect : uint8_t
-{
-    HR = 1,
-    PM = 2,
-    CSC = 3,
-    CT = 4
-};
-
-
 class SpinBLEAdvertisedDevice
 {
 public: //eventually these shoul be made private
-    BLEAdvertisedDevice *advertisedDevice = nullptr;
+    NimBLEAdvertisedDevice *advertisedDevice = nullptr;
     NimBLEAddress peerAddress;
     int connectedClientID = BLE_HS_CONN_HANDLE_NONE;
     BLEUUID serviceUUID = (uint16_t)0x0000;
@@ -134,26 +132,6 @@ public: //eventually these shoul be made private
     }
 
     void print();
-
-    //userSelectHR  = 1,userSelectPM  = 2,userSelectCSC = 3,userSelectCT  = 4
-    void setSelected(userSelect flags)
-    {
-        switch (flags)
-        {
-        case 1:
-            userSelectedHR = true;
-            break;
-        case 2:
-            userSelectedPM = true;
-            break;
-        case 3:
-            userSelectedCSC = true;
-            break;
-        case 4:
-            userSelectedCT = true;
-            break;
-        }
-    }
 };
 
 class SpinBLEClient
@@ -180,7 +158,10 @@ public: //Not all of these need to be public. This should be cleaned up later.
     void scanProcess();
     void disconnect();
     //Check for duplicate services of BLEClient and remove the previoulsy connected one.
-    void removeDuplicates(BLEClient *pClient);
+    void removeDuplicates(NimBLEClient *pClient);
+    //Reset devices in myBLEDevices[]. Bool All (true) or only connected ones (false)
+    void resetDevices();
+    void postConnect(NimBLEClient *pClient);
 
 private:
     class MyAdvertisedDeviceCallback : public NimBLEAdvertisedDeviceCallbacks
